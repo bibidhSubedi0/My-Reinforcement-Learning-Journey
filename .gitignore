@@ -1,0 +1,42 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# PyCharm / VSCode settings (optional)
+.idea/
+.vscode/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs and outputs
+*.log
+*.out
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Pygame or Gym-generated temporary files
+*.mp4
+*.avi
+*.png
+*.jpg
+*.gif
+*.svg
+*.json
+
+# Environment variables or secrets
+.env
+.env.*
+
+# pycache inside any subfolder
+**/__pycache__/
