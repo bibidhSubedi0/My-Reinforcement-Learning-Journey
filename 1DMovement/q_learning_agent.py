@@ -45,6 +45,8 @@ for episode in range(episodes):
         q_table[state, action] += alpha * (reward + gamma * best_next - q_table[state, action])
         state = next_state
 
+
+
 print("✅ Q-Table learned:")
 print(q_table)
 
@@ -53,20 +55,20 @@ print(q_table)
 
 
 
-# --- Visualization after training ---
-print("\n🎬 Running one episode with learned Q-table...\n")
-time.sleep(1)
-state, _ = env.reset()
-done = False
+# # --- Visualization after training ---
+# print("\n🎬 Running one episode with learned Q-table...\n")
+# time.sleep(1)
+# state, _ = env.reset()
+# done = False
 
-while not done:
-    action = np.argmax(q_table[state])  # Exploitation only
-    next_state, reward, terminated, truncated, _ = env.step(action)
-    done = terminated or truncated
-    state = next_state
-    time.sleep(0.5)
-    env.render()
+# while not done:
+#     action = np.argmax(q_table[state])  # Exploitation only
+#     next_state, reward, terminated, truncated, _ = env.step(action)
+#     done = terminated or truncated
+#     state = next_state
+#     time.sleep(0.5)
+#     env.render()
 
-print("✅ Agent reached goal using learned Q-table.")
-pygame.time.wait(1000)
-pygame.quit()
+# print("✅ Agent reached goal using learned Q-table.")
+# pygame.time.wait(1000)
+# pygame.quit()
