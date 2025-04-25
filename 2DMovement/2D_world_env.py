@@ -2,6 +2,7 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 import pygame
+import random
 
 class TwoDWorldEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
@@ -26,7 +27,7 @@ class TwoDWorldEnv(gym.Env):
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
-        self.agent_pos = np.array([0, 0], dtype=np.int32)
+        self.agent_pos = np.array([random.randint(0,4), random.randint(0,4)], dtype=np.int32)
 
         if self.render_mode == "human":
             self._render_frame()
@@ -34,17 +35,17 @@ class TwoDWorldEnv(gym.Env):
         return (self.agent_pos[0],self.agent_pos[1]), {}
 
     def step(self, action):
-        if action == 0 and self.agent_pos[1] > 0:  # left
+        if action == 0 and self.agent_pos[1] > 0:  # up
             self.agent_pos[1] -= 1
-        elif action == 1 and self.agent_pos[1] < self.grid_size - 1:  # right
+        elif action == 1 and self.agent_pos[1] < self.grid_size - 1:  # down
             self.agent_pos[1] += 1
-        elif action == 2 and self.agent_pos[0] > 0:  # up
+        elif action == 2 and self.agent_pos[0] > 0:  # left
             self.agent_pos[0] -= 1
-        elif action == 3 and self.agent_pos[0] < self.grid_size - 1:  # down
+        elif action == 3 and self.agent_pos[0] < self.grid_size - 1:  # right
             self.agent_pos[0] += 1
 
         obs = (self.agent_pos[0],self.agent_pos[1])
-        terminated = obs == (4,4)
+        terminated = obs == (2,2)
         reward = 1 if terminated else 0
         truncated = False
         info = {}

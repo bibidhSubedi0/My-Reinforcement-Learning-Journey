@@ -7,6 +7,8 @@ import pygame
 import time
 import random
 import pandas as pd
+import csv
+import time
 
 
 # Register the environment defined previosuly
@@ -25,7 +27,7 @@ env = gym.make("TwoDWorld-v0", render_mode="human")
 
 
 class QLearningAgent:
-    def __init__(self, env, alpha=0.1, gamma=0.9, epsilon=0.9, episodes=10):
+    def __init__(self, env, alpha=0.1, gamma=0.9, epsilon=0.1, episodes=50):
         self.env = env
         self.alpha = alpha  # Learning rate
         self.gamma = gamma  # Discount factor
@@ -49,9 +51,9 @@ class QLearningAgent:
         else:
             # Exploitation: choose the action with the highest Q-value for the current state
             values = self.qtable[state]
-            max_value = max(values)  # Find the maximum value
-            max_index = values.index(max_value)  # Get the index of the maximum value
-            return max_index
+            max_value = max(values)
+            max_indices = [index for index, value in enumerate(values) if value == max_value]
+            return random.choice(max_indices)  # Randomly pick one of the max-value indices
         
     def update_q_table(self, state, action, reward, next_state, done):
         next_state = tuple(next_state) if isinstance(next_state, np.ndarray) else next_state
@@ -65,10 +67,20 @@ class QLearningAgent:
         else:
             # If done, just update Q-value with reward
             self.qtable[state][action] += self.alpha * (reward - self.qtable[state][action])
+    
+    
+    def save_episode_times(self, durations, filename="episode_times.csv"):
+        with open(filename, mode="w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["episode", "duration_seconds"])
+            writer.writerows(durations)
+
 
     def train(self):
+        episode_durations = []
         # Training loop for Q-learning
         for episode in range(self.episodes):
+            start_time = time.time()
             print("Current : ",episode)
 
             state,_ = self.env.reset()  # Reset environment to initial state
@@ -84,9 +96,27 @@ class QLearningAgent:
                 self.update_q_table(state, action, reward, next_state, done)  
                 # Move to next state
                 state = next_state  
+            
+            duration = time.time() - start_time
+            episode_durations.append((episode + 1, duration))
+        
+        self.save_episode_times(episode_durations)
 
 
 agent = QLearningAgent(env)
 agent.train()
+
+
+def save_q_table_dict_to_csv(q_table, filename="q_table.csv"):
+    with open(filename, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["x", "y", "p1", "p2", "p3", "p4"])  # header
+        
+        for (x, y), values in q_table.items():
+            row = [x, y] + values
+            writer.writerow(row)
+
+save_q_table_dict_to_csv(agent.qtable)
+
 
 print(agent.qtable)
