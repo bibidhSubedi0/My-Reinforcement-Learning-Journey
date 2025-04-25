@@ -16,31 +16,28 @@ register(
     id="TwoDWorld-v0",
     entry_point="2D_world_env:TwoDWorldEnv",  # module:class
 )
-env = gym.make("TwoDWorld-v0", render_mode="human")
-
-
-
-# Goal --- Make it to the bottom left square
-
-
-
+env = gym.make("TwoDWorld-v0", render_mode="human", grid_size=8)
 
 
 class QLearningAgent:
-    def __init__(self, env, alpha=0.1, gamma=0.9, epsilon=0.1, episodes=50):
+    def __init__(self, env, alpha=0.5, gamma=0.95, epsilon=1, episodes=1000):
+        self.min_epsilon = 0.1
+        self.decay_rate = 0.995
         self.env = env
         self.alpha = alpha  # Learning rate
         self.gamma = gamma  # Discount factor
         self.epsilon = epsilon  # Exploration rate
         self.episodes = episodes
 
-        x_max, y_max = 5, 5  # Assuming grid size of 5x5 for Q-table
+        x_max, y_max = env.unwrapped.grid_size, env.unwrapped.grid_size
         self.qtable = {}
 
         # Loop to initialize points from (0, 0) to (x_max, y_max)
         for i in range(x_max):  # Loop over x coordinates
             for j in range(y_max):  # Loop over y coordinates
                 self.qtable[(i, j)] = [0, 0, 0, 0]  # Set values to [0, 0, 0, 0] (for 4 possible actions)
+        
+        print(self.qtable)
 
     def choose_action(self, state):
         # Epsilon-greedy action selection
@@ -81,30 +78,39 @@ class QLearningAgent:
         # Training loop for Q-learning
         for episode in range(self.episodes):
             start_time = time.time()
-            print("Current : ",episode)
 
             state,_ = self.env.reset()  # Reset environment to initial state
             state = tuple(state)
             done = False
+            trunc = False
 
-            while not done:
+            r = False
+            while not (done or trunc):
                 # Choose action based on current state
                 action = self.choose_action(state)  
                 # Take action, observe next state and reward
                 next_state, reward, done, trunc, info = self.env.step(action)  
+
+                r= reward
                 # Update Q-table
                 self.update_q_table(state, action, reward, next_state, done)  
                 # Move to next state
                 state = next_state  
             
+            
+            print("Current : ",episode)
             duration = time.time() - start_time
             episode_durations.append((episode + 1, duration))
+            
+            self.epsilon = max(self.min_epsilon, self.epsilon * self.decay_rate)
+
         
         self.save_episode_times(episode_durations)
 
 
 agent = QLearningAgent(env)
 agent.train()
+
 
 
 def save_q_table_dict_to_csv(q_table, filename="q_table.csv"):
@@ -118,5 +124,34 @@ def save_q_table_dict_to_csv(q_table, filename="q_table.csv"):
 
 save_q_table_dict_to_csv(agent.qtable)
 
+# Do a best possible run 
+# Do a best possible run 
+print("\nRunning Best Policy...")
+time.sleep(1)
+
+total_reward = 0
+steps = 0
+
+
+for i in range(10):
+
+    state, _ = env.reset()
+    state = tuple(state)
+    done = False
+    trunc = False
+    while not (done or trunc):
+        env.render()
+
+        # Pick the best action (greedy)
+        q_values = agent.qtable[state]
+        best_action = int(np.argmax(q_values))
+
+        next_state, reward, done, trunc, info = env.step(best_action)
+        state = tuple(next_state)
+        total_reward += reward
+        steps += 1
+
+print(f"\nfinished best run in {steps} steps with total reward: {total_reward}")
+env.close()
 
 print(agent.qtable)

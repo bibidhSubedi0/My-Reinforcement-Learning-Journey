@@ -40,3 +40,6 @@ Thumbs.db
 
 # pycache inside any subfolder
 **/__pycache__/
+2DMovement/high_exploration.html
+2DMovement/high_exploitation.html
+2DMovement/goal_for_center.html

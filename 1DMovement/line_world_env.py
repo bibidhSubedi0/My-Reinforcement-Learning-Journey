@@ -56,7 +56,7 @@ class LineWorldEnv(gym.Env):
 
     def _render_frame(self):
         if self.window is None:
-            pygame.init()
+            pygame.init()   
             self.window = pygame.display.set_mode((self.window_size, 100))
 
         self.window.fill((255, 255, 255))  # white background
