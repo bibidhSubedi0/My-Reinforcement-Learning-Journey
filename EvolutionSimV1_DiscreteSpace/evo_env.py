@@ -4,48 +4,69 @@ from gymnasium import spaces
 import pygame
 import random
 
-
+# Defines the 2D world where the agents live
 class TwoDWorldEnv(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
+    metadata = {"render_modes": ["human"], "render_fps": 200}
 
+    
     def __init__(self, render_mode=None, grid_size=5, n_agents=5, n_obstacles=3):
         self.grid_size = grid_size
         self.n_agents = n_agents  
         self.window_size = 800  
-        self.render_mode = render_mode
-        self.goals = [[(0, 0), (39, 4)], [(0, 35), (39, 39)]]
+        self.render_mode = render_mode # Human nai hunxa
+       
+        # For now goal is to be in the region define by these coordinates
+        self.goals = [[(0, 0), (grid_size-1, 10)]]
 
+        # Observation space will be a box from 0 to gridsize -1
         self.observation_space = spaces.Box(
             low=0,
             high=self.grid_size - 1,
             shape=(self.n_agents, 2),  # (agent, x/y)
             dtype=np.int32
         )
-        self.action_space = spaces.MultiDiscrete([4] * self.n_agents)  # One action for each agent
 
+        # Action space will be [4,4,...,4], i.e. 4 possible actions for each agents
+        self.action_space = spaces.MultiDiscrete([4] * self.n_agents)  
+
+        # Window as in pygame wala window
         self.window = None
-        self.clock = None
-        self.agent_positions = None  # Track multiple agents
 
+        # For time stuff, pygame wala nai
+        self.clock = None
+
+        # Position of all the agents
+        self.agent_positions = None 
+
+
+    # Reset all the agents to same position
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
-        self.agent_positions = np.array([
-            (random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1))
-            for _ in range(self.n_agents)
-        ], dtype=np.int32)
+        self.agent_positions = [(self.grid_size/2 -1,self.grid_size-1)]*self.n_agents
+        self.agent_positions = np.array(self.agent_positions, dtype=np.int32)
 
-        if self.render_mode == "human":
-            self._render_frame()
-
+        # [(),(),...,()] here top level [] is duplicated and () are copied by reference
         return self.agent_positions.copy(), {}
 
+    # Helper to check if the agent is in the goal area
+    def is_in_goal_area(self, pos):
+        x, y = pos
+        for (x1, y1), (x2, y2) in self.goals:
+            if x1 <= x <= x2 and y1 <= y <= y2:
+                return True
+        return False
+
+    # Take steps
     def step(self, actions):
+
+        # Each of these things need to be list as they are different for each agent
         next_states = []
         rewards = []
         terminations = []
         truncations = []
         infos = [{} for _ in range(self.n_agents)]
 
+        # Apply the action on agents position
         for idx, action in enumerate(actions):
             if action == 0 and self.agent_positions[idx][1] > 0:  # up
                 self.agent_positions[idx][1] -= 1
@@ -62,6 +83,7 @@ class TwoDWorldEnv(gym.Env):
                 goal[0][0] <= obs[0] <= goal[1][0] and goal[0][1] <= obs[1] <= goal[1][1]
                 for goal in self.goals
             )
+                
             reward = 10 if terminated else 0
             truncation = False
 
@@ -69,10 +91,6 @@ class TwoDWorldEnv(gym.Env):
             rewards.append(reward)
             terminations.append(terminated)
             truncations.append(truncation)
-
-        if self.render_mode == "human":
-            self._render_frame()
-
         return next_states, rewards, terminations, truncations, infos
 
 
@@ -84,7 +102,7 @@ class TwoDWorldEnv(gym.Env):
             pygame.display.quit()
             pygame.quit()
 
-    def _render_frame(self):
+    def _render_frame(self, time_passed=0):
         if self.window is None and self.render_mode == "human":
             pygame.init()
             pygame.display.init()
@@ -96,6 +114,8 @@ class TwoDWorldEnv(gym.Env):
         canvas.fill((255, 255, 255))
 
         cell_size = self.window_size // self.grid_size
+        
+        # Draw the goal areas
         for x in range(self.grid_size):
             for y in range(self.grid_size):
                 rect = pygame.Rect(y * cell_size, x * cell_size, cell_size, cell_size)
@@ -117,6 +137,14 @@ class TwoDWorldEnv(gym.Env):
             )
             pygame.draw.rect(canvas, (0, 0, 255), agent_rect)  # Blue agent
 
+        # Display the timer at the top-left corner of the screen
+        font = pygame.font.SysFont("Arial", 24)
+        time_text = font.render(f"Time: {time_passed:.2f} s", True, (0, 0, 0))
+        canvas.blit(time_text, (10, 10)) 
+
+        # Update the screen
         self.window.blit(canvas, (0, 0))
         pygame.display.update()
+
+        # Cap the frame rate
         self.clock.tick(self.metadata["render_fps"])
