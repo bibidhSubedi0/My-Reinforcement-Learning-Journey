@@ -15,7 +15,7 @@ register(
 agentsn = 100
 
 # Create environment
-env = gym.make("TwoDWorldMulti-v0", render_mode="human", grid_size=100, n_agents=agentsn)
+env = gym.make("TwoDWorldMulti-v0", render_mode="human", grid_size=75, n_agents=agentsn)
 
 # For each indivisual agents
 class QLearningAgent:
@@ -27,7 +27,6 @@ class QLearningAgent:
         self.min_epsilon = 0.7 # Minimum exploration rate
         self.decay_rate = 1 # Exploration decay
         
-
         # Initialize Q-table for all grid positions
         self.qtable = {}
         for i in range(grid_size):
@@ -51,14 +50,15 @@ class QLearningAgent:
             self.qtable[state][action] += self.alpha * (reward + self.gamma * next_max - self.qtable[state][action])
         else:
             self.qtable[state][action] += self.alpha * (reward - self.qtable[state][action])
+        
+        
 
 
 # Train the agents independently for each epoch
-def train_multi_agents(env, n_agents, episodes):
+def train_multi_agents(env,agents, n_agents, episodes):
     # Initlize n_agents -> Will need to modify it later for to 
     # include agents from previous generations and reprodudce new agents
     # by replicating the q tables upto some factor
-    agents = [QLearningAgent(env.unwrapped.grid_size) for _ in range(n_agents)]
 
     
     # An iteration for each agent
@@ -70,7 +70,10 @@ def train_multi_agents(env, n_agents, episodes):
         states = [tuple(state) for state in states]
         done_flags = [False] * n_agents
 
-        while not all(done_flags):
+
+        duration = time.time() - start_time
+
+        while (duration<=25):
             actions = []
             for i in range(n_agents):
                 # if not done_flags[i]:
@@ -83,6 +86,7 @@ def train_multi_agents(env, n_agents, episodes):
             next_states, rewards, terminations, truncations, infos = env.unwrapped.step(actions)
             env.unwrapped._render_frame(time.time() - start_time)
 
+
             # Update Q-tables
             for i in range(n_agents):
                 if not done_flags[i]:
@@ -90,10 +94,31 @@ def train_multi_agents(env, n_agents, episodes):
                     agents[i].update_q_table(states[i], actions[i], rewards[i], next_state, terminations[i] or truncations[i])
                     states[i] = next_state
                     done_flags[i] = terminations[i] or truncations[i]
+                
+            
+            duration = time.time() - start_time
 
-        duration = time.time() - start_time
-        if(duration >= 10):
-            return agents
+        # Now after requred duration purge all the agents not in the zoneeee
+        pos = []
+        for i in range(n_agents):
+            if not env.unwrapped.is_in_goal_area(env.unwrapped.get_agent_position(i)):
+                # How do i purge it hummm
+                print(env.unwrapped.get_agent_position(i))
+                pos.append(env.unwrapped.get_agent_position(i))
+        
+        
+            
+        
+
+        n_agents = n_agents - len(pos)
+        env.unwrapped.remove_agents(n_agents,pos)
+
+
+        # Lemme see the q table of rest of the agents
+        for i in range(n_agents):
+            print(agents[i].qtable)
+
+
 
         # Decay epsilon
         for agent in agents:
@@ -101,11 +126,16 @@ def train_multi_agents(env, n_agents, episodes):
 
         print(f"Episode {episode + 1} finished.")
 
+
+
     return agents
+
+
 
 # Start training
 n_agents = agentsn
 episodes = 50
-agents = train_multi_agents(env, n_agents, episodes)
+agents = [QLearningAgent(env.unwrapped.grid_size) for _ in range(n_agents)]
+agents = train_multi_agents(env,agents, n_agents, episodes)
 
 env.close()

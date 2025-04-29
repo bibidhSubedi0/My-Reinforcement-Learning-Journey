@@ -12,7 +12,7 @@ class TwoDWorldEnv(gym.Env):
     def __init__(self, render_mode=None, grid_size=5, n_agents=5, n_obstacles=3):
         self.grid_size = grid_size
         self.n_agents = n_agents  
-        self.window_size = 800  
+        self.window_size = 750
         self.render_mode = render_mode # Human nai hunxa
        
         # For now goal is to be in the region define by these coordinates
@@ -79,23 +79,37 @@ class TwoDWorldEnv(gym.Env):
 
             obs = (self.agent_positions[idx][0], self.agent_positions[idx][1])
 
-            terminated = any(
+            in_termination_space = any(
                 goal[0][0] <= obs[0] <= goal[1][0] and goal[0][1] <= obs[1] <= goal[1][1]
                 for goal in self.goals
             )
                 
-            reward = 10 if terminated else 0
+            reward = 5 if in_termination_space else -1
             truncation = False
 
             next_states.append(obs)
             rewards.append(reward)
-            terminations.append(terminated)
+            terminations.append(in_termination_space)
             truncations.append(truncation)
         return next_states, rewards, terminations, truncations, infos
 
+    def get_agent_position(self, ith):
+        return self.agent_positions[ith]
 
     def render(self):
         self._render_frame()
+    
+    def remove_agents(self, remaining_size, pos_to_remove):
+        self.n_agents = remaining_size
+        filtered_positions = []
+        for pos in self.agent_positions:
+            if not any(np.array_equal(pos, rem) for rem in pos_to_remove):
+                filtered_positions.append(pos)
+        self.agent_positions = filtered_positions
+        for pos in pos_to_remove:
+            print(f"Removed {pos}")
+
+            
 
     def close(self):
         if self.window is not None:
