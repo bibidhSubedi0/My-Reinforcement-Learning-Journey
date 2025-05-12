@@ -6,7 +6,7 @@ import random
 
 # Defines the 2D world where the agents live
 class TwoDWorldEnv(gym.Env):
-    metadata = {"render_modes": ["human"], "render_fps": 200}
+    metadata = {"render_modes": ["human"], "render_fps": 10}
 
     
     def __init__(self, render_mode=None, grid_size=5, n_agents=5, n_obstacles=3):
@@ -16,7 +16,8 @@ class TwoDWorldEnv(gym.Env):
         self.render_mode = render_mode # Human nai hunxa
        
         # For now goal is to be in the region define by these coordinates
-        self.goals = [[(0, 0), (grid_size-1, 10)]]
+        self.goals = [[(0, 0), (grid_size-1, grid_size/10)]]
+        # self.goals = [[(0, 0), (grid_size/10, grid_size-1)]]
 
         # Observation space will be a box from 0 to gridsize -1
         self.observation_space = spaces.Box(
@@ -84,7 +85,7 @@ class TwoDWorldEnv(gym.Env):
                 for goal in self.goals
             )
                 
-            reward = 5 if in_termination_space else -1
+            reward = 5 if in_termination_space else -5
             truncation = False
 
             next_states.append(obs)
@@ -99,6 +100,7 @@ class TwoDWorldEnv(gym.Env):
     def render(self):
         self._render_frame()
     
+    # here just removing the positions
     def remove_agents(self, remaining_size, pos_to_remove):
         self.n_agents = remaining_size
         filtered_positions = []

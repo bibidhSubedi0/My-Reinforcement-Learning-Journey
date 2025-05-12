@@ -28,7 +28,6 @@ Thumbs.db
 # Pygame or Gym-generated temporary files
 *.mp4
 *.avi
-*.png
 *.jpg
 *.gif
 *.svg
