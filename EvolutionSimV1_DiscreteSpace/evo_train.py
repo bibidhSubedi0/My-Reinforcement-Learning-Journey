@@ -1,13 +1,13 @@
 import numpy as np
 import gymnasium as gym
 from gymnasium.envs.registration import register
-import pygame
+import json
 import time
 import random
-import csv
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import ast
 import pandas as pd
 
 # Register the environment
@@ -16,7 +16,7 @@ register(
     entry_point="evo_env:TwoDWorldEnv",
 )
 
-agentsn = 1
+agentsn = 5
 grid_size = 10
 
 # Create environment
@@ -80,7 +80,7 @@ def train_multi_agents(env,agents, n_agents, episodes):
         # --------------------------------- Main Epesoide --------------------------------------
         # Main session of the epesoide 
         steps = 0
-        while (duration<=0.01):  # Note at this time frame, the agents can make an avera of around 500 steps
+        while (duration<=0.01):  # Note at this time frame, the agents can make an avera of around 500 steps in my cpu, can be optimized wayyyyyyyyy further then this
             actions = []
             for i in range(n_agents):
                 # if not done_flags[i]:
@@ -102,9 +102,9 @@ def train_multi_agents(env,agents, n_agents, episodes):
                     done_flags[i] = terminations[i] or truncations[i]
             duration = time.time() - start_time
 
-        
-        print("Steps taken : ",steps)
 
+        print("Steps taken : ",steps)
+        # env.unwrapped.render()
 
         # --------------------------------- After each epesiodes ----------------------------------
 
@@ -152,12 +152,14 @@ def test_agent_from_random_starts(env, agent, n_tests=10):
         path = [state]
         done = False
 
+
+        start_time = time.time()
         while not done:
             action = np.argmax(agent.qtable[state])  # greedy policy
             next_state, reward, terminated, truncated, _ = env.unwrapped.step([action])
             state = tuple(next_state[0])
             path.append(state)
-            done = terminated[0] or truncated[0]
+            done = terminated[0] or truncated[0] or (time.time()-start_time>1)
             env.unwrapped._render_frame()
         
         # Plot the path
@@ -222,15 +224,39 @@ def get_policy_arrows(agent, grid_size):
     plt.show()
 
 
+def save_knowladge(agents):
+# --------------------------- To Save the learnings  ----------------------------------------------
+    with open("EvolutionSimV1_DiscreteSpace/knowladge.json", "w") as f:
+        json.dump([{str(k): v for k, v in a.qtable.items()} for a in agents], f)
+
+
+
+def load_knowladge(agents):
+# --------------------------- To Load the knowladge file ------------------------------------
+    with open("EvolutionSimV1_DiscreteSpace/knowladge.json", "r") as f:
+        qtables = json.load(f)
+
+    for a, qtable in zip(agents, qtables):
+        a.qtable = {ast.literal_eval(k): v for k, v in qtable.items()}
+
+
+def visualize_results(env, agents):
+    # ------------------------- Visualizations --------------------------------------------------
+    # get_heat_map(agents)
+    # get_policy_arrows(agents[0], grid_size)
+    for i in range(len(agents)):
+        test_agent_from_random_starts(env, agents[i], n_tests=1)
+
+
 # Start training
 n_agents = agentsn
 episodes = 100
 agents = [QLearningAgent(env.unwrapped.grid_size) for _ in range(n_agents)]
-agents = train_multi_agents(env,agents, n_agents, episodes)
 
-get_heat_map(agents)
-get_policy_arrows(agents[0], grid_size)
-test_agent_from_random_starts(env, agents[0], n_tests=3)
+# agents = train_multi_agents(env,agents, n_agents, episodes)
+
+load_knowladge(agents)
+visualize_results(env, agents)
 
 
 

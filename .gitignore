@@ -31,7 +31,6 @@ Thumbs.db
 *.jpg
 *.gif
 *.svg
-*.json
 
 # Environment variables or secrets
 .env
